@@ -1,5 +1,6 @@
 const http  = require('http');
 const fs    = require('fs');
+const url   = require('url');
 const { networkInterfaces } = require('os');
 
 let blocklist = [];
@@ -10,24 +11,72 @@ let storagePath = "H:/Jesse's art/icons/android/"
 const pageStyles = `<style>
 * {
     font-family: sans-serif;
+    box-sizing: border-box;
+}
+form {
+    padding-top: 20px;
 }
 code {
     font-family: monospace;
 }
-path {
-    font-style: italic;
+path, path > a {
+    font-family: monospace;
+    font-size: 1em;
+    border-left: 0;
 }
-a {
+path > a {
+    padding: 4px;
+    border-bottom: 4px solid;
+}
+details {
+    display: flex;
+    flex-direction: column;
+}
+a:not(.short) {
+    display: flex;
+}
+a, button {
+    flex-direction: row;
+    align-items: center;
     color: #efe;
     text-decoration: none;
-    padding: 7px 10px;
-    margin: 2px;
+    padding: 10px 12px;
+    margin-inline: 2px;
     border-radius: 0px;
-    border-bottom: 2px solid #488;
-    font-size: 18px;
-    width: 400px;
+    border: none;
+    border-left: 4px solid #4888;
+    font-size: 16px;
+    width: 800px;
     max-width: 95%;
     font-family: sans-serif;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+button {
+    display: flex;
+    flex-direction: row;
+    padding: 0px;
+    align-items: center;
+    padding-right: 14px;
+    width: unset;
+    border-color: #777;
+    background: #333;
+}
+button > svg {
+    height: 2em;
+    padding: 5px;
+    padding-left: 1px;
+    margin-right: 10px;
+    background: #777;
+    color: white;
+}
+a > svg.bi {
+    height: 1em;
+    margin-right: 0.5em;
+}
+a:not(:hover):nth-child(even) {
+    background: #282828;
 }
 a.list {
     display: inline-flex;
@@ -37,11 +86,14 @@ a.list {
 a:hover {
     background: #244;
 }
+button:hover {
+    background: #555;
+}
 a:visited:hover {
     background: #434;
 }
 a:visited {
-    border-color: #868;
+    border-color: #868f;
 }
 a.list > .preview {
     height: 40px;
@@ -55,6 +107,12 @@ summary {
 body {
     background: #222;
     color: #eee;
+}
+.modified-date {
+    margin-left: auto;
+    padding-inline: 15px;
+    font-size: 0.8em;
+    opacity: 0.8;
 }
 </style>`;
 
@@ -83,9 +141,12 @@ const listener = function (req, res) {
         req.url = "/index.html";
     }
     if (req.url.startsWith("/simplefile/E/") || req.url.startsWith("simplefile/E/")) {
-        req.url = req.url.replace(/\/\.\.\//g, "//").replace(/\/\.\.\//g, "/");
-        req.url = req.url.replace(/\/\//g, "/").replace(/\/\//g, "/").replace(/\/\//g, "/");
-        let reqPath = storagePath + req.url.replace("/simplefile/E/", "").replace(/%20/g, " ");
+        const parsedUrl = url.parse(req.url, true);
+        let parsedUrlPath = parsedUrl.pathname;
+        parsedUrlPath = parsedUrlPath.replace(/\/\.\.\//g, "//").replace(/\/\.\.\//g, "/");
+        parsedUrlPath = parsedUrlPath.replace(/\/\//g, "/").replace(/\/\//g, "/").replace(/\/\//g, "/");
+
+        let reqPath = storagePath + parsedUrlPath.replace("/simplefile/E/", "").replace(/%20/g, " ");
         console.log(
             req.url.replace('/simplefile/E', 'sf')
             + ' '.repeat(Math.max(1, 60-req.url.length))
@@ -104,9 +165,9 @@ const listener = function (req, res) {
         try {
             isFile = fs.statSync(reqPath).isFile();
         } catch {
-            isFile = 3;
+            isFile = null;
         }
-        if (isFile === 3) {
+        if (isFile === null) {
             res.setHeader("Content-Type", "text/html");
             res.writeHead(404);
             res.end(`
@@ -175,50 +236,111 @@ const listener = function (req, res) {
         } else {
             fs.readdir(reqPath, function(err, files) {
                 if (err) {
-                    res.setHeader("Content-Type", "text/plain");
-                    console.log(err);
-                    console.log(req.url, reqPath);
+                    console.error(err);
+                    res.writeHead(404, { "Content-Type": "text/plain" });
                     res.end("Not Found.");
                     return;
                 }
-                let head_HTML = `
-                <head>
-                <title>SimpleFile ${reqPath.replace(storagePath, "/")}</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                ${pageStyles}
-                </head>
-                `;
-                let dirs_HTML = `
-                <h1>Directory <path><a href="/simplefile/E/">sf /</a>${reqPath.replace(storagePath, "")}</path></h1>
-                <details open><summary>Subdirectories</summary>
-                <a href="${reqPath.replace(storagePath, "/simplefile/E/").replace(/\/[^\/]*\/?$/g, "/")}">.. up one directory</a><br><br>`;
+            
+                const parentDirectory = reqPath.replace(storagePath, "");
+            
+                let head_HTML = `<head>
+                    <title>SimpleFile ${parentDirectory}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    ${pageStyles}
+                </head>`;
+            
+                let dirs_HTML = `<h1>Directory <path><a class="short" href="/simplefile/E/">sf/</a>${parentDirectory}</path></h1>
+                    <details open><summary>Subdirectories</summary>
+                    <a href="${reqPath.replace(storagePath, "/simplefile/E/").replace(/\/[^\/]*\/?$/g, "/")}">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                        </svg>
+                        <b>up one directory</b>
+                    </a><br><br>`;
+            
                 let files_HTML = "</details><details open><summary>Files</summary>";
-                files.forEach(function(file) {
-                    let isSubFile
+            
+                let sortByName = true; // Default sort by name
+            
+                if (parsedUrl.query.sort === "modified") {
+                    sortByName = false;
+                }
+            
+                let sortedFiles = files.map(function(file) {
+                    const filePath = `${reqPath}/${file}`;
+                    const fileStat = fs.statSync(filePath);
+                    return {
+                        name: file,
+                        modifiedTime: fileStat.mtime.getTime()
+                    };
+                });
+            
+                if (sortByName) {
+                    sortedFiles.sort(function(a, b) {
+                        return a.name.localeCompare(b.name);
+                    });
+                } else {
+                    sortedFiles.sort(function(a, b) {
+                        return a.modifiedTime - b.modifiedTime;
+                    });
+                }
+            
+                let first_file = true;
+                let first_dir = true;
+            
+                sortedFiles.forEach(function(fileData) {
+                    const file = fileData.name;
+                    let isSubFile;
                     try {
-                        isSubFile = fs.statSync(reqPath+"/"+file).isFile();
+                        isSubFile = fs.statSync(`${reqPath}/${file}`).isFile();
                     } catch {
-                        isSubFile = 3;
+                        isSubFile = null; // Set to null to indicate an error
                     }
-                    if (isSubFile === 3) {
+
+                    const filePath = `${reqPath}/${file}`;
+                    const href = `/simplefile/E/${parentDirectory}/${file}`;
+                    const fileStat = fs.statSync(filePath);
+                    const modifiedDate = fileStat.mtime.toLocaleString();
+            
+                    if (isSubFile === null) {
                         files_HTML += `<a class="list">Nonexistent File</a>`;
                     } else if (isSubFile) {
-                        const href = reqPath.replace(storagePath, "/simplefile/E/") + "/" + file;
-                        files_HTML += `<a class="list" href="${href}">${file} `; // no closing tag, to add the preview in
-
-                        if (file.endsWith('.png') || file.endsWith('.svg')) {
-                            files_HTML += `<img src="${href}" class="preview"> </a>`
-                        } else {
-                            files_HTML +=`</a>`
+                        let truncatedName = file.length > 45 ? file.substring(0, 42) + "..." : file;
+            
+                        files_HTML += `<a class="list" href="${href}" title="${file}">${truncatedName}
+                            <span class="modified-date">${first_file ? 'Modified' : ''} ${modifiedDate}</span>`;
+            
+                        first_file = false;
+            
+                        if (/\.(png|svg|jpg|jpeg)$/.test(file)) {
+                            files_HTML += ` <img src="${href}" class="preview">`;
                         }
+            
+                        files_HTML += ` </a>`;
                     } else {
-                        dirs_HTML += `<a class="list" href="${reqPath.replace(storagePath, "/simplefile/E/")+"/"+file}">${file}</a>`;
+                        dirs_HTML += `<a class="list" href="/simplefile/E/${parentDirectory}/${file}">${file}
+                            <span class="modified-date">${first_dir ? 'Modified' : ''} ${modifiedDate}</span>
+                        </a>`;
+                        first_dir = false;
                     }
                 });
+            
+                let sortButtonHTML = `<form action="${req.url}" method="GET" style="margin-top: 10px;">
+                    <input type="hidden" name="sort" value="${sortByName ? 'modified' : 'name'}">
+                    <button type="submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-filter" viewBox="0 0 16 16">
+                            <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+                        </svg>
+                        Sort by ${sortByName? 'date modified' : 'name'}
+                    </button>
+                    </form>`;
+
                 let end_HTML = "</details>";
+
                 res.setHeader("Content-Type", "text/html");
                 res.writeHead(200);
-                res.end(head_HTML + dirs_HTML + files_HTML + end_HTML);
+                res.end(head_HTML + sortButtonHTML + dirs_HTML + sortButtonHTML + files_HTML + end_HTML);
             });
         }
     } else {
