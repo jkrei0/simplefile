@@ -366,24 +366,3 @@ const server = http.createServer(listener);
 server.listen(8084);
 console.log("server listening on localhost:8084");
 console.log(getIPAddr());
-
-const prompt = require('prompt-sync')({sigint: true});
-
-/* (()=>{
-    while (true) {
-        let command = prompt("SimpleFile Server >> ");
-        if (command.startsWith("block:add ")) {
-            let URL = command.replace("block:add ", "");
-            blocklist.push();
-            console.log(`Path ${URL} added to blocklist. Make sure it's the full path!`);
-        }
-        else if (command.startsWith("block:list")) {
-            let full_list = "";
-            for (item of blocklist) {
-                full_list += item + ",";
-            }
-            console.log("Blocked paths:");
-            console.log(full_list);
-        }
-    }
-})(); */
