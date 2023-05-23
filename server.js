@@ -3,11 +3,21 @@ const fs    = require('fs');
 const url   = require('url');
 const { networkInterfaces } = require('os');
 
+// SERVER CONFIGURATION
+// --------------------
+// Directory to server files from (absolute path)
+const storagePath = "H:/Jesse's art/icons/android/";
+
+// Port server listens on
+const port = 8084;
+// Specific files to block, eg "H:/Jesse's art/icons/android/convert.bat"
+// Must be exact filenames, and must be an absolute path.
 let blocklist = [];
+// Filters for files to block, eg ".bat" will block all files containing ".bat"
+// If the path includes any of the filter strings, it will be blocked.
 let filterlist = [];
 
-let storagePath = "H:/Jesse's art/icons/android/"
-
+// CSS applied all pages
 const pageStyles = `<style>
 * {
     font-family: sans-serif;
@@ -115,26 +125,6 @@ body {
     opacity: 0.8;
 }
 </style>`;
-
-const getIPAddr = function () {
-    const nets = networkInterfaces();
-    const results = Object.create(null); // Or just '{}', an empty object
-
-    for (const name of Object.keys(nets)) {
-        for (const net of nets[name]) {
-            // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
-            // 'IPv4' is in Node <= 17, from 18 it's a number 4 or 6
-            const familyV4Value = typeof net.family === 'string' ? 'IPv4' : 4
-            if (net.family === familyV4Value && !net.internal) {
-                if (!results[name]) {
-                    results[name] = [];
-                }
-                results[name].push(net.address);
-            }
-        }
-    }
-    return results;
-}
 
 const listener = function (req, res) {
     if (req.url === "/" || req.url == "/home" || req.url == "/index") {
@@ -363,6 +353,35 @@ const listener = function (req, res) {
 }
 
 const server = http.createServer(listener);
-server.listen(8084);
-console.log("server listening on localhost:8084");
-console.log(getIPAddr());
+server.listen(port);
+console.log("SimpleFile server listening on port " + port);
+
+
+const getIPAddrs = function () {
+    const nets = networkInterfaces();
+    const results = Object.create(null); // Or just '{}', an empty object
+
+    for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+            // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
+            // 'IPv4' is in Node <= 17, from 18 it's a number 4 or 6
+            const familyV4Value = typeof net.family === 'string' ? 'IPv4' : 4
+            if (net.family === familyV4Value && !net.internal) {
+                if (!results[name]) {
+                    results[name] = [];
+                }
+                results[name].push(net.address);
+            }
+        }
+    }
+    return results;
+}
+
+// Print all available IP addresses to connect to the server
+const connections = getIPAddrs();
+console.log('Available at:');
+for (const entry in connections) {
+    const address = connections[entry];
+    console.log(entry, ':', 'http://' + address + ':' + port);
+}
+console.log('');
