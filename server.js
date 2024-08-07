@@ -7,7 +7,11 @@ import { networkInterfaces } from 'os';
 // SERVER CONFIGURATION
 // --------------------
 // Directory to server files from (absolute path), ends in a \\
-const storagePath = "C:\\youtube-dl\\";
+let tempStoragePath = process.argv[2] || process.cwd();
+if (!tempStoragePath.endsWith('\\')) {
+    tempStoragePath += '\\';
+}
+const storagePath = tempStoragePath;
 
 // Port server listens on
 const port = 8084;
@@ -277,6 +281,7 @@ const listener = function (req, res) {
 const server = http.createServer(listener);
 server.listen(port);
 console.log("SimpleFile server listening on port " + port);
+console.log("Serving files from " + storagePath);
 
 
 const getIPAddrs = function () {

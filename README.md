@@ -1,8 +1,19 @@
 # SimpleFile
 SimpleFile is a simple node.js fileserver, useful for transferring/exploring files over WiFi.
 
-To use, edit `server.js` to set the root directory and other options.
-Then run `node server.js`.
+- Mobile-friendly reponsive UI
+- Video and large file streaming
+- Download or preview files in the browser
+
+## Use
+In the command line,
+```sh
+# download simplefile
+git clone https://github.com/jkrei0/simplefile
+# start the server
+node server "C:\path-to-files-root"
+```
+
 
 ## Screenshots
 
