@@ -1,0 +1,116 @@
+
+* {
+    font-family: sans-serif;
+    box-sizing: border-box;
+}
+form {
+    padding-top: 20px;
+}
+code {
+    font-family: monospace;
+}
+path, path > a {
+    font-family: monospace;
+    font-size: 1em;
+    border-left: 0;
+}
+path > a {
+    padding: 4px;
+    border-bottom: 4px solid;
+}
+details {
+    display: flex;
+    flex-direction: column;
+}
+a:not(.short) {
+    display: flex;
+}
+a, button {
+    flex-direction: row;
+    align-items: center;
+    color: #efe;
+    text-decoration: none;
+    padding: 10px 12px;
+    margin-inline: 2px;
+    border-radius: 0px;
+    border: none;
+    border-left: 4px solid #4888;
+    font-size: 16px;
+    width: 800px;
+    max-width: calc(95% - 45px); /* account for download button */
+    font-family: sans-serif;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+button {
+    display: flex;
+    flex-direction: row;
+    padding: 0px;
+    align-items: center;
+    padding-right: 14px;
+    width: unset;
+    border-color: #777;
+    background: #333;
+}
+button > svg {
+    height: 2em;
+    padding: 5px;
+    padding-left: 1px;
+    margin-right: 10px;
+    background: #777;
+    color: white;
+}
+a > svg.bi {
+    height: 1em;
+    margin-right: 0.5em;
+}
+span:nth-child(even) {
+    background: #282828;
+}
+a.list {
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+a.side-download {
+    width: unset;
+    display: inline-flex;
+    box-sizing: border-box;
+    width: 45px;
+}
+a.side-download svg {
+    margin: 0;
+}
+a:hover {
+    background: #244;
+}
+button:hover {
+    background: #555;
+}
+a:visited:hover {
+    background: #434;
+}
+a:visited {
+    border-color: #868f;
+}
+a.list > .preview {
+    height: 40px;
+}
+summary {
+    font-weight: bold;
+    font-size: 24px;
+    margin: 10px;
+    cursor: pointer;
+}
+body {
+    background: #222;
+    color: #eee;
+}
+.modified-date {
+    margin-left: auto;
+    text-align: right;
+    padding-inline: 15px;
+    font-size: 0.8em;
+    opacity: 0.8;
+}

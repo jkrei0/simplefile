@@ -19,113 +19,7 @@ let blocklist = [];
 let filterlist = [];
 
 // CSS applied all pages
-const pageStyles = `<style>
-* {
-    font-family: sans-serif;
-    box-sizing: border-box;
-}
-form {
-    padding-top: 20px;
-}
-code {
-    font-family: monospace;
-}
-path, path > a {
-    font-family: monospace;
-    font-size: 1em;
-    border-left: 0;
-}
-path > a {
-    padding: 4px;
-    border-bottom: 4px solid;
-}
-details {
-    display: flex;
-    flex-direction: column;
-}
-a:not(.short) {
-    display: flex;
-}
-a, button {
-    flex-direction: row;
-    align-items: center;
-    color: #efe;
-    text-decoration: none;
-    padding: 10px 12px;
-    margin-inline: 2px;
-    border-radius: 0px;
-    border: none;
-    border-left: 4px solid #4888;
-    font-size: 16px;
-    width: 800px;
-    max-width: 95%;
-    font-family: sans-serif;
-    background: transparent;
-    cursor: pointer;
-    text-align: left;
-}
-button {
-    display: flex;
-    flex-direction: row;
-    padding: 0px;
-    align-items: center;
-    padding-right: 14px;
-    width: unset;
-    border-color: #777;
-    background: #333;
-}
-button > svg {
-    height: 2em;
-    padding: 5px;
-    padding-left: 1px;
-    margin-right: 10px;
-    background: #777;
-    color: white;
-}
-a > svg.bi {
-    height: 1em;
-    margin-right: 0.5em;
-}
-a:not(:hover):nth-child(even) {
-    background: #282828;
-}
-a.list {
-    display: inline-flex;
-    justify-content: space-between;
-    align-items: flex-start;
-}
-a:hover {
-    background: #244;
-}
-button:hover {
-    background: #555;
-}
-a:visited:hover {
-    background: #434;
-}
-a:visited {
-    border-color: #868f;
-}
-a.list > .preview {
-    height: 40px;
-}
-summary {
-    font-weight: bold;
-    font-size: 24px;
-    margin: 10px;
-    cursor: pointer;
-}
-body {
-    background: #222;
-    color: #eee;
-}
-.modified-date {
-    margin-left: auto;
-    padding-inline: 15px;
-    font-size: 0.8em;
-    opacity: 0.8;
-}
-</style>`;
+const pageStyles = `<style>${fs.readFileSync('./style.css')}</style>`;
 
 const streamVideoOrFile = function(videoPath, req, res) {
     const mimeType = mime.getType(req.url) || "application/octet-stream";
@@ -254,7 +148,9 @@ const listener = function (req, res) {
                     ${pageStyles}
                 </head>`;
             
-                let dirs_HTML = `<h1>Directory <path><a class="short" href="/simplefile/E/">sf/</a>${parentDirectory}</path></h1>
+                let dirs_HTML = `<h1>
+                        Directory <path><a class="short" href="/simplefile/E/">sf/</a>${parentDirectory}</path>
+                    </h1>
                     <details open><summary>Subdirectories</summary>
                     <a href="${reqPath.replace(storagePath, "/simplefile/E/").replace(/\/[^\/]*\/?$/g, "/")}">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
@@ -310,9 +206,15 @@ const listener = function (req, res) {
                     if (isSubFile === null) {
                         files_HTML += `<a class="list">Nonexistent File</a>`;
                     } else if (isSubFile) {
-                        let truncatedName = file.length > 45 ? file.substring(0, 42) + "..." : file;
+                        const trimStartLen = 35;
+                        const trimEndLen = 9;
+                        const maxFilenameLen = trimStartLen + trimEndLen + 5; // 5 = ' ... '
+                        const begin = file.substring(0, trimStartLen);
+                        const end = file.substring(file.length - trimEndLen);
+
+                        let truncatedName = (file.length > maxFilenameLen) ? (begin + ' ... ' + end) : (file);
             
-                        files_HTML += `<a class="list" href="${href}" title="${file}">${truncatedName}
+                        files_HTML += `<span><a class="list" href="${href}" title="${file}">${truncatedName}
                             <span class="modified-date">${first_file ? 'Modified' : ''} ${modifiedDate}</span>`;
             
                         first_file = false;
@@ -321,11 +223,17 @@ const listener = function (req, res) {
                             files_HTML += ` <img src="${href}" class="preview">`;
                         }
             
-                        files_HTML += ` </a>`;
+                        // close file <a>, add download link, close line <span>
+                        files_HTML += `</a> <a class="side-download" href=${href}?download=true>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-file-earmark-arrow-down" viewBox="0 0 16 16">
+                                <path d="M8.5 6.5a.5.5 0 0 0-1 0v3.793L6.354 9.146a.5.5 0 1 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 10.293z"/>
+                                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                            </svg>
+                        </a></span>`;
                     } else {
-                        dirs_HTML += `<a class="list" href="/simplefile/E/${parentDirectory}/${file}">${file}
+                        dirs_HTML += `<span><a class="list" href="/simplefile/E/${parentDirectory}/${file}">${file}
                             <span class="modified-date">${first_dir ? 'Modified' : ''} ${modifiedDate}</span>
-                        </a>`;
+                        </a></span>`;
                         first_dir = false;
                     }
                 });
