@@ -1,12 +1,13 @@
-const http  = require('http');
-const fs    = require('fs');
-const url   = require('url');
-const { networkInterfaces } = require('os');
+import http from 'http';
+import fs from 'fs';
+import url from 'url';
+import mime from 'mime';
+import { networkInterfaces } from 'os';
 
 // SERVER CONFIGURATION
 // --------------------
-// Directory to server files from (absolute path)
-const storagePath = "H:/Jesse's art/icons/android/";
+// Directory to server files from (absolute path), ends in a \\
+const storagePath = "C:\\youtube-dl\\";
 
 // Port server listens on
 const port = 8084;
@@ -126,6 +127,49 @@ body {
 }
 </style>`;
 
+const streamVideoOrFile = function(videoPath, req, res) {
+    const mimeType = mime.getType(req.url) || "application/octet-stream";
+    const range = req.headers.range;
+
+    // Get video stats
+    const videoSize = fs.statSync(videoPath).size;
+
+    const commonHeaders = {
+        'Content-Type': mimeType,
+    }
+    if (mimeType === "application/octet-stream") {
+        // Make unknown files a download
+        commonHeaders['Content-Disposition'] = 'attatchment';
+    }
+
+    if (!range) {
+        // No range header: serve entire video
+        const headers = {
+            ...commonHeaders,
+            'Content-Length': videoSize,
+        };
+
+        res.writeHead(200, headers);
+        fs.createReadStream(videoPath).pipe(res);
+    } else {
+        // Range header present: serve requested part of the video
+        const CHUNK_SIZE = 10 ** 6; // 1MB
+        const start = Number(range.replace(/\D/g, ''));
+        const end = Math.min(start + CHUNK_SIZE, videoSize - 1);
+
+        const contentLength = end - start + 1;
+        const headers = {
+            ...commonHeaders,
+            'Content-Range': `bytes ${start}-${end}/${videoSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': contentLength
+        };
+
+        res.writeHead(206, headers);
+        fs.createReadStream(videoPath, { start, end }).pipe(res);
+    }
+}
+
 const listener = function (req, res) {
     if (req.url === "/" || req.url == "/home" || req.url == "/index") {
         req.url = "/index.html";
@@ -170,56 +214,26 @@ const listener = function (req, res) {
             );
             return;
         } else if (isFile) {
+            const mimeType = mime.getType(req.url) || "application/octet-stream";
+
+            if (mimeType?.startsWith('video')) {
+                streamVideoOrFile(reqPath, req, res);
+                return;
+            }
+
             fs.readFile(reqPath, function (err,data) {
                 if (err) {
+                    if (err.code === 'ERR_FS_FILE_TOO_LARGE') {
+                        streamVideoOrFile(reqPath, req, res);
+                        return;
+                    }
+
                     res.setHeader("Content-Type", "text/plain");
-                    res.end("Not Found.");
-                    console.log(err);
+                    res.end("An error occurred: " + err.code);
+                    console.error(err);
                     return;
                 }
-                if (req.url.endsWith(".js")) {
-                    res.setHeader("Content-Type", "application/javascript");
-                } else if (req.url.endsWith(".json")) {
-                    res.setHeader("Content-Type", "application/json");
-                } else if (req.url.endsWith(".css")) {
-                    res.setHeader("Content-Type", "text/css");
-                } else if (req.url.endsWith(".png")) {
-                    res.setHeader("Content-Type", "image/png");
-                } else if (req.url.endsWith(".svg")) {
-                    res.setHeader("Content-Type", "image/svg+xml");
-                } else if (req.url.endsWith(".jpeg") || req.url.endsWith(".jpg")) {
-                    res.setHeader("Content-Type", "image/jpeg");
-                } else if (req.url.endsWith(".zip")) {
-                    res.setHeader("Content-Type", "application/zip");
-                } else if (req.url.endsWith(".xml")) {
-                    res.setHeader("Content-Type", "application/xml");
-                } else if (req.url.endsWith(".ico")) {
-                    res.setHeader("Content-Type", "image/vnd.microsoft.icon");
-                } else if (req.url.endsWith(".pdf")) {
-                    res.setHeader("Content-Type", "application/pdf");
-                } else if (req.url.endsWith(".gif")) {
-                    res.setHeader("Content-Type", "image/gif");
-                } else if (req.url.endsWith(".mp4")) {
-                    res.setHeader("Content-Type", "video/mp4");
-                } else if (req.url.endsWith(".mpeg")) {
-                    res.setHeader("Content-Type", "video/mpeg");
-                } else if (req.url.endsWith(".mp3")) {
-                    res.setHeader("Content-Type", "audio/mpeg");
-                } else if (req.url.endsWith(".wav")) {
-                    res.setHeader("Content-Type", "audio/wav");
-                } else if (req.url.endsWith(".php")) {
-                    res.setHeader("Content-Type", "application/x-httpd-php");
-                } else if (req.url.endsWith(".pptx")) {
-                    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
-                } else if (req.url.endsWith(".ppt")) {
-                    res.setHeader("Content-Type", "application/vnd.ms-powerpoint");
-                } else if (req.url.endsWith(".tif") || req.url.endsWith(".tiff")) {
-                    res.setHeader("Content-Type", "image/tiff");
-                } else if (req.url.endsWith(".htm") || req.url.endsWith(".html")) {
-                    res.setHeader("Content-Type", "text/html");
-                } else{
-                    res.setHeader("Content-Type", "application/octet-stream");
-                }
+                res.setHeader("Content-Type", mimeType);
                 res.writeHead(200);
                 res.end(data);
             });
