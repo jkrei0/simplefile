@@ -10,6 +10,7 @@ In the command line,
 ```sh
 # download simplefile
 git clone https://github.com/jkrei0/simplefile
+npm install
 # start the server
 node server "C:\path-to-files-root"
 ```
