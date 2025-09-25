@@ -99,7 +99,7 @@ const listener = function (req, res) {
         } catch {
             isFile = null;
         }
-        if (isFile === null) {
+        if (isFile === null || flagged) {
             res.setHeader("Content-Type", "text/html");
             res.writeHead(404);
             res.end(`
