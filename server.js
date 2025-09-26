@@ -235,7 +235,7 @@ const listener = function (req, res) {
                             </svg>
                         </a></span>`;
                     } else {
-                        dirs_HTML += `<span><a class="list" href="/simplefile/E/${parentDirectory}/${file}">${file}
+                        dirs_HTML += `<span><a class="list" href="/simplefile/E/${parentDirectory}/${file}">${file}/
                             <span class="modified-date">${first_dir ? 'Modified' : ''} ${modifiedDate}</span>
                         </a></span>`;
                         first_dir = false;

@@ -65,18 +65,26 @@ a > svg.bi {
     height: 1em;
     margin-right: 0.5em;
 }
+details > span {
+    display: flex;
+    justify-content: space-between;
+}
 span:nth-child(even) {
     background: #282828;
 }
 a.list {
     display: inline-flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: stretch;
+    flex-grow: 1;
 }
 a.side-download {
     width: unset;
     display: inline-flex;
+    align-items: center;
+    justify-content: center;
     box-sizing: border-box;
+    min-width: 5vw;
     width: 45px;
 }
 a.side-download svg {
